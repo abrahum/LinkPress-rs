@@ -1,0 +1,4 @@
+[site]
+site_name = "A linkpress-rs website"
+since = 2021
+theme = "Default"
