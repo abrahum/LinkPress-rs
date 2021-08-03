@@ -27,7 +27,7 @@ pub async fn rocket_main() {
     let cfg = config::load_config();
     let teps = Path::new("themes").join(&cfg.site.theme).join("templates");
     if !teps.exists() {
-        eprintln!("Theme do not exists or Broken.");
+        eprintln!("Theme do not exists or broken.");
         std::process::exit(101);
     }
     let rc_figment = rocket::Config::figment().merge(("template_dir", teps.to_str()));
