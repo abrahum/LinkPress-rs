@@ -1,10 +1,9 @@
+mod cli;
 mod config;
 mod markdown;
 mod rcapp;
 
 use clap::{App, Arg, SubCommand};
-use std::net;
-use std::str::FromStr;
 
 #[macro_use]
 extern crate rocket;
@@ -14,7 +13,15 @@ fn main() {
         .version("0.1.0")
         .author("AbrahumLink <307887491@qq.com>")
         .about("A static site generator by rust.")
-        .subcommand(SubCommand::with_name("init").about("init a new site."))
+        .subcommand(
+            SubCommand::with_name("init").about("init a new site.").arg(
+                Arg::with_name("name")
+                    .short("n")
+                    .long("name")
+                    .required(false)
+                    .help("the Linkpress dir name"),
+            ),
+        )
         .subcommand(
             SubCommand::with_name("serve")
                 .about("start built-in server.")
@@ -44,7 +51,7 @@ fn main() {
                     Arg::with_name("type")
                         .short("t")
                         .long("type")
-                        .required(true)
+                        .required(false)
                         .takes_value(true)
                         .help("the type of the new page"),
                 )
@@ -65,29 +72,13 @@ fn main() {
     let mut help_app = linkpress_app.clone();
     let matches = linkpress_app.get_matches();
 
-    if let Some(_) = matches.subcommand_matches("init") {
-        println!("Init here");
+    if let Some(i) = matches.subcommand_matches("init") {
+        let name = i.value_of("name");
+        cli::init(name);
     } else if let Some(s) = matches.subcommand_matches("serve") {
-        let mut host: net::IpAddr = net::IpAddr::from([127, 0, 0, 1]);
-        if let Some(value) = s.value_of("host") {
-            if let Ok(ipvalue) = net::IpAddr::from_str(value) {
-                host = ipvalue;
-            }
-        }
-        let mut port: u16 = 4040;
-        if let Some(value) = s.value_of("port") {
-            if let Ok(u16value) = u16::from_str(value) {
-                port = u16value;
-            }
-        }
-        println!("{}:{}", host, port);
-        rcapp::rocket_main();
-    } else if let Some(m) = matches.subcommand_matches("new") {
-        println!(
-            "new page type:{},name:{}",
-            m.value_of("type").unwrap(),
-            m.value_of("name").unwrap()
-        );
+        rcapp::serve(s);
+    } else if let Some(n) = matches.subcommand_matches("new") {
+        cli::new(n.value_of("type"), n.value_of("name").unwrap());
     } else if let Some(_) = matches.subcommand_matches("generate") {
         println!("generate here.");
     } else {
