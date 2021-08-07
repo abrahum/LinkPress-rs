@@ -1,0 +1,7 @@
+{% extends "katex" %}
+{% block body %}
+{{ super() }}
+<h1>{{front_matter.title}}</h1>
+<span>{{front_matter.date}}</span>
+{{ body | safe }}
+{% endblock body %}

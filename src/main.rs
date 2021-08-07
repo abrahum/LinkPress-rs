@@ -2,6 +2,7 @@ mod cli;
 mod config;
 mod markdown;
 mod rcapp;
+mod utils;
 
 use clap::{App, Arg, SubCommand};
 
@@ -14,17 +15,17 @@ fn main() {
         .author("AbrahumLink <307887491@qq.com>")
         .about("A static site generator by rust.")
         .subcommand(
-            SubCommand::with_name("init").about("init a new site.").arg(
+            SubCommand::with_name("init").about("Init a new site.").arg(
                 Arg::with_name("name")
                     .short("n")
                     .long("name")
                     .required(false)
-                    .help("the Linkpress dir name"),
+                    .help("The Linkpress dir name"),
             ),
         )
         .subcommand(
             SubCommand::with_name("serve")
-                .about("start built-in server.")
+                .about("Start built-in server.")
                 .alias("s")
                 .arg(
                     Arg::with_name("host")
@@ -32,7 +33,7 @@ fn main() {
                         .long("host")
                         .takes_value(true)
                         .required(false)
-                        .help("the host of server"),
+                        .help("The host of server"),
                 )
                 .arg(
                     Arg::with_name("port")
@@ -40,20 +41,20 @@ fn main() {
                         .long("port")
                         .takes_value(true)
                         .required(false)
-                        .help("the port of server"),
+                        .help("The port of server"),
                 ),
         )
         .subcommand(
             SubCommand::with_name("new")
                 .alias("n")
-                .about("create a new page.")
+                .about("Create a new page.")
                 .arg(
                     Arg::with_name("type")
                         .short("t")
                         .long("type")
                         .required(false)
                         .takes_value(true)
-                        .help("the type of the new page"),
+                        .help("The type of the new page"),
                 )
                 .arg(
                     Arg::with_name("name")
@@ -61,12 +62,12 @@ fn main() {
                         .long("name")
                         .required(true)
                         .takes_value(true)
-                        .help("the name of the new page"),
+                        .help("The name of the new page"),
                 ),
         )
         .subcommand(
             SubCommand::with_name("generate")
-                .about("generate static file.")
+                .about("Generate static file.")
                 .alias("g"),
         );
     let mut help_app = linkpress_app.clone();
@@ -80,7 +81,7 @@ fn main() {
     } else if let Some(n) = matches.subcommand_matches("new") {
         cli::new(n.value_of("type"), n.value_of("name").unwrap());
     } else if let Some(_) = matches.subcommand_matches("generate") {
-        println!("generate here.");
+        cli::generator();
     } else {
         help_app.print_help().unwrap();
     }

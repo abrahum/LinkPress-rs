@@ -6,6 +6,11 @@ use std::path::PathBuf;
 
 const DEFAULE_DIR_NAME: &str = "Linkpress-rs";
 const DEFAULT_TYPE: &str = "post";
+const DEFAULT_INDEX: &str = r"---
+title: index
+date: 2021-08-05
+template: index
+---";
 
 pub fn init(dir_name_input: Option<&str>) {
     let dir_name: &str;
@@ -24,14 +29,18 @@ pub fn init(dir_name_input: Option<&str>) {
         let path = PathBuf::from(dir_name);
         fs::create_dir(path.join("themes")).unwrap();
         fs::create_dir(path.join("posts")).unwrap();
+        fs::write(path.join("index.md"), DEFAULT_INDEX).unwrap();
     }
 }
 
 pub fn new(type_: Option<&str>, name: &str) {
-    if !PathBuf::from(config::CONFIG_PATH).exists() {
-        println!("请在Linkpress项目文件夹内使用指令。")
+    match is_project_dir() {
+        Ok(_) => _new(type_, name),
+        Err(s) => println!("{}", s),
     }
+}
 
+fn _new(type_: Option<&str>, name: &str) {
     let dir_name: String;
     if let Some(x) = type_ {
         dir_name = format!("{}s", x);
@@ -47,6 +56,23 @@ pub fn new(type_: Option<&str>, name: &str) {
     let today = today.format("%Y-%m-%d");
     let file_path = PathBuf::from(&dir_name).join(format!("{}-{}.md", today, name));
     fs::write(file_path, "").unwrap();
+}
+
+pub fn generator() {
+    match is_project_dir() {
+        Ok(_) => {
+            println!("generate here.");
+        }
+        Err(s) => println!("{}", s),
+    }
+}
+
+fn is_project_dir() -> Result<bool, &'static str> {
+    if PathBuf::from(config::CONFIG_PATH).exists() {
+        Ok(true)
+    } else {
+        Err("请在Linkpress项目文件夹内使用指令。")
+    }
 }
 
 fn had(name: &str) -> bool {
