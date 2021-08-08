@@ -1,4 +1,8 @@
-{% extends "katex" %}
+{% extends "base" %}
+{% block head %}
+<title>{{front_matter.title}}</title>
+{{super()}}
+{% endblock head %}}
 {% block body %}
 {{ super() }}
 <h1>{{front_matter.title}}</h1>

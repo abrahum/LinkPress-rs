@@ -3,6 +3,7 @@ mod config;
 mod markdown;
 mod rcapp;
 mod utils;
+mod generator;
 
 use clap::{App, Arg, SubCommand};
 

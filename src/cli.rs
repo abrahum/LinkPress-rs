@@ -1,4 +1,5 @@
 use crate::config;
+use crate::generator as gen ;
 use chrono::Local;
 use std::env::current_dir;
 use std::fs;
@@ -61,7 +62,7 @@ fn _new(type_: Option<&str>, name: &str) {
 pub fn generator() {
     match is_project_dir() {
         Ok(_) => {
-            println!("generate here.");
+            gen::generator();
         }
         Err(s) => println!("{}", s),
     }

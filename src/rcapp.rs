@@ -2,6 +2,7 @@ use crate::config;
 use crate::utils;
 use clap::ArgMatches;
 use rocket::fs::NamedFile;
+use rocket::tokio;
 use rocket_dyn_templates::Template;
 use std::net;
 use std::path::{Path, PathBuf};
@@ -18,16 +19,25 @@ async fn favicon() -> Option<NamedFile> {
     NamedFile::open(Path::new("favicon.ico")).await.ok()
 }
 
-// #[get("/config")]
-// async fn config_test() -> Template {
-//     let cfg = config::load_config();
-//     Template::render("config", cfg)
-// }
-
 // static routes
 #[get("/<file..>")]
 async fn static_files(file: PathBuf) -> Option<NamedFile> {
     NamedFile::open(Path::new("static/").join(file)).await.ok()
+}
+
+// theme routes
+#[get("/js/<file..>")]
+async fn js_files(file: PathBuf) -> Option<NamedFile> {
+    let lp_config = config::load_config();
+    let js_dir = Path::new("themes").join(&lp_config.site.theme).join("js");
+    NamedFile::open(js_dir.join(file)).await.ok()
+}
+
+#[get("/css/<file..>")]
+async fn css_files(file: PathBuf) -> Option<NamedFile> {
+    let lp_config = config::load_config();
+    let css_dir = Path::new("themes").join(&lp_config.site.theme).join("css");
+    NamedFile::open(css_dir.join(file)).await.ok()
 }
 
 // types routes
@@ -43,41 +53,46 @@ async fn types_page(type_: &str, name: &str) -> Template {
 }
 
 // main function of rocket
-#[rocket::main]
-async fn rocket_main() {
-    let cfg = config::load_config();
-    println!("{:?}", cfg);
-    let teps = Path::new("themes").join(&cfg.site.theme).join("templates");
-    if !teps.exists() {
-        eprintln!("Theme do not exists or broken.");
-        std::process::exit(101);
-    }
+#[tokio::main]
+async fn tokio_run(template_dir: &str, host: net::IpAddr, port: u16) {
     let rc_figment = rocket::Config::figment()
-        .merge(("template_dir", teps.to_str()))
-        .merge(("address", cfg.serve.host))
-        .merge(("port", cfg.serve.port));
-    rocket::custom(rc_figment)
+        .merge(("template_dir", template_dir))
+        .merge(("address", host))
+        .merge(("port", port));
+    rocket::custom(rc_figment.clone())
         .attach(Template::fairing())
-        .mount("/", routes![index, types_page, favicon])
+        .mount(
+            "/",
+            routes![index, types_page, favicon, js_files, css_files],
+        )
         .mount("/static", routes![static_files])
         .launch()
         .await
         .unwrap();
 }
 
+// set config of rocket and run main function
 pub fn serve(s: &ArgMatches) {
-    let mut lp_config = config::load_config();
+    let lp_config = config::load_config();
+    let mut host: net::IpAddr = lp_config.serve.host;
+    let mut port: u16 = lp_config.serve.port;
     if let Some(value) = s.value_of("host") {
-        if let Ok(host) = net::IpAddr::from_str(value) {
-            lp_config.serve.host = host;
-            lp_config = lp_config.save(None);
+        if let Ok(h) = net::IpAddr::from_str(value) {
+            host = h;
         }
     }
     if let Some(value) = s.value_of("port") {
-        if let Ok(port) = u16::from_str(value) {
-            lp_config.serve.port = port;
-            lp_config.save(None);
+        if let Ok(p) = u16::from_str(value) {
+            port = p;
         }
     }
-    rocket_main();
+    let template_dir = Path::new("themes")
+        .join(&lp_config.site.theme)
+        .join("templates");
+
+    if !template_dir.exists() {
+        eprintln!("Theme do not exists or broken.");
+        std::process::exit(101);
+    }
+    tokio_run(template_dir.to_str().unwrap(), host, port);
 }

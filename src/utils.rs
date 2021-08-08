@@ -1,7 +1,7 @@
 use crate::markdown;
 use regex::Regex;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub fn get_type_path(type_: &str) -> Result<PathBuf, &'static str> {
     let path = PathBuf::from(type_);
@@ -47,4 +47,31 @@ pub fn build_pagedata(name: &str, md: String) -> markdown::MarkdownParserResult 
     };
     let mdr = markdown::markdown(md, title, date);
     mdr
+}
+
+#[derive(Debug)]
+pub struct Dir {
+    dir_name: String,
+    child_files: Vec<String>,
+    child_dirs: Vec<Dir>,
+}
+
+pub fn build_map(p: &Path) -> Dir {
+    let mut rdit = Dir {
+        dir_name: String::from(p.file_name().unwrap().to_str().unwrap()),
+        child_files: Vec::new(),
+        child_dirs: Vec::new(),
+    };
+    for i in p.read_dir().unwrap() {
+        if let Ok(entry) = i {
+            if entry.path().as_path().is_dir() {
+                let cd = build_map(entry.path().as_path());
+                rdit.child_dirs.push(cd);
+            } else if entry.path().as_path().is_file() {
+                rdit.child_files
+                    .push(String::from(entry.path().as_path().to_str().unwrap()))
+            }
+        }
+    }
+    rdit
 }
