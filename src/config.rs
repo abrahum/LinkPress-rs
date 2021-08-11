@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use toml;
 
-pub const CONFIG_PATH: &str = "Linkpress.toml";
+pub const CONFIG_PATH: &str = "LinkPress.toml";
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -64,7 +64,7 @@ impl Config {
             None => dir_name = PathBuf::from(CONFIG_PATH),
         }
         println!("{:?}", dir_name);
-        fs::write(PathBuf::from(dir_name), config_toml).expect("Linkpress.toml保存错误");
+        fs::write(PathBuf::from(dir_name), config_toml).expect("LinkPress.toml保存错误");
         self
     }
 }

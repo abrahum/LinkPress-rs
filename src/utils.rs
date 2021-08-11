@@ -1,5 +1,7 @@
+use crate::logger::copy_info;
 use crate::markdown;
 use regex::Regex;
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -49,29 +51,67 @@ pub fn build_pagedata(name: &str, md: String) -> markdown::MarkdownParserResult 
     mdr
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Dir {
-    dir_name: String,
-    child_files: Vec<String>,
-    child_dirs: Vec<Dir>,
+    pub child_files: HashMap<String, PathBuf>,
+    pub child_dirs: HashMap<String, Dir>,
+}
+
+const DIR_BALAK_ARRAY: [&'static str; 3] = ["themes", "target", "templates"];
+const FILE_BLACK_ARRAY: [&'static str; 3] = ["LinkPress.toml", "theme.toml", "Cargo.toml"];
+
+fn in_black(p: &PathBuf, is_dir: bool) -> bool {
+    let file_name = p.file_name().unwrap();
+    let mut r = false;
+    let black_array = if is_dir {
+        DIR_BALAK_ARRAY
+    } else {
+        FILE_BLACK_ARRAY
+    };
+    for black in black_array.iter() {
+        if &file_name.to_str().unwrap() == black {
+            r = true;
+            break;
+        }
+    }
+    r
 }
 
 pub fn build_map(p: &Path) -> Dir {
     let mut rdit = Dir {
-        dir_name: String::from(p.file_name().unwrap().to_str().unwrap()),
-        child_files: Vec::new(),
-        child_dirs: Vec::new(),
+        child_files: HashMap::new(),
+        child_dirs: HashMap::new(),
     };
     for i in p.read_dir().unwrap() {
         if let Ok(entry) = i {
-            if entry.path().as_path().is_dir() {
-                let cd = build_map(entry.path().as_path());
-                rdit.child_dirs.push(cd);
-            } else if entry.path().as_path().is_file() {
+            let ep = entry.path();
+            if ep.is_dir() && !in_black(&ep, true) {
+                let child_dirs = build_map(ep.as_path());
+                rdit.child_dirs.insert(
+                    String::from(ep.file_name().unwrap().to_str().unwrap()),
+                    child_dirs,
+                );
+            } else if ep.as_path().is_file() && !in_black(&ep, false) {
                 rdit.child_files
-                    .push(String::from(entry.path().as_path().to_str().unwrap()))
+                    .insert(String::from(ep.file_name().unwrap().to_str().unwrap()), ep);
             }
         }
     }
     rdit
+}
+
+pub fn cp_all_dir(p: &PathBuf, to: &PathBuf) {
+    copy_info(p, to, false);
+    for i in p.read_dir().unwrap() {
+        if let Ok(entry) = i {
+            let ep = entry.path();
+            if ep.as_path().is_file() && !in_black(&ep, false) {
+                fs::copy(&ep, to.join(&ep.file_name().unwrap())).unwrap();
+            } else if ep.as_path().is_dir() && !in_black(&ep, true) {
+                let next_to = to.join(&ep.file_name().unwrap());
+                fs::create_dir(next_to.as_path()).unwrap();
+                cp_all_dir(&ep, &next_to);
+            }
+        }
+    }
 }

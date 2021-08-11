@@ -1,11 +1,24 @@
 {% extends "base" %}
 {% block head %}
-<title>{{front_matter.title}}</title>
+<title>
+    {{front_matter.title}}
+</title>
 {{super()}}
 {% endblock head %}}
 {% block body %}
 {{ super() }}
-<h1>{{front_matter.title}}</h1>
-<span>{{front_matter.date}}</span>
+<h1>
+    {{front_matter.title}}
+</h1>
+<span class="sub time">
+    {{front_matter.date}}
+</span>
+{% for tag in front_matter.tags %}
+<span class="sub tags">
+    <a href="/tags/{{tag}}">
+        #{{tag}}
+    </a>
+</span>
+{% endfor %}
 {{ body | safe }}
 {% endblock body %}
