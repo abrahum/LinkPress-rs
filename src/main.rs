@@ -12,7 +12,7 @@ use clap::{App, Arg, SubCommand};
 extern crate rocket;
 
 fn main() {
-    simple_logger::SimpleLogger::new().init().unwrap();
+    simple_logger::init_with_level(log::Level::Info).unwrap();
     let linkpress_app = App::new("LinkPress")
         .version("0.1.0")
         .author("AbrahumLink <307887491@qq.com>")

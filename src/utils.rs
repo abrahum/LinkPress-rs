@@ -1,9 +1,8 @@
 use crate::logger::copy_info;
-use crate::markdown;
-use regex::Regex;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub fn get_type_path(type_: &str) -> Result<PathBuf, &'static str> {
     let path = PathBuf::from(type_);
@@ -28,30 +27,7 @@ pub fn get_page(type_: &str, name: &str) -> Result<String, &'static str> {
     }
 }
 
-pub fn build_pagedata(name: &str, md: String) -> markdown::MarkdownParserResult {
-    let date: String;
-    let title: String;
-    let re = Regex::new(
-        r"(?x)
-    (?P<date>\d{4}-\d{2}-\d{2})
-    -(?P<title>[^\.]+)",
-    )
-    .unwrap();
-    match re.captures(name) {
-        Some(cap) => {
-            date = String::from(&cap["date"]);
-            title = String::from(&cap["title"]);
-        }
-        None => {
-            date = String::from("-");
-            title = String::from("File name illegal");
-        }
-    };
-    let mdr = markdown::markdown(md, title, date);
-    mdr
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Dir {
     pub child_files: HashMap<String, PathBuf>,
     pub child_dirs: HashMap<String, Dir>,
@@ -77,7 +53,7 @@ fn in_black(p: &PathBuf, is_dir: bool) -> bool {
     r
 }
 
-pub fn build_map(p: &Path) -> Dir {
+pub fn build_dir(p: &PathBuf) -> Dir {
     let mut rdit = Dir {
         child_files: HashMap::new(),
         child_dirs: HashMap::new(),
@@ -86,7 +62,7 @@ pub fn build_map(p: &Path) -> Dir {
         if let Ok(entry) = i {
             let ep = entry.path();
             if ep.is_dir() && !in_black(&ep, true) {
-                let child_dirs = build_map(ep.as_path());
+                let child_dirs = build_dir(&ep);
                 rdit.child_dirs.insert(
                     String::from(ep.file_name().unwrap().to_str().unwrap()),
                     child_dirs,

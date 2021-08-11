@@ -1,8 +1,8 @@
 use crate::config;
 use crate::logger::copy_info;
+use crate::markdown;
 use crate::utils;
 use std::collections::HashMap;
-use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
@@ -10,9 +10,8 @@ use tera::{Context, Tera};
 pub fn generator() {
     // load LinkPress config and cwd and more variables
     // 载入 LinkPress 的配置项，获得 cwd 和其他必要变量
-    let cwd = env::current_dir().unwrap();
-    let cwd = Path::new(&cwd);
-    let d = utils::build_map(cwd);
+    let cwd = PathBuf::from(".");
+    let d = utils::build_dir(&cwd);
     let lp_config = config::load_config();
 
     // init target dir clear all files
@@ -57,22 +56,27 @@ pub fn generator() {
 
     // copy all cwd files(only files dir will not) to target dir
     // 将根目录下的文件（不包括文件夹）拷贝至 target 目录
-    copy_or_trans_dir(&d, &target_dir, &tera);
+    copy_or_trans_dir(&d, &target_dir, &tera, &d);
 }
 
-fn copy_or_trans_dir(d: &utils::Dir, target_dir: &PathBuf, tera: &Tera) {
+fn copy_or_trans_dir(d: &utils::Dir, target_dir: &PathBuf, tera: &Tera, dir_tree: &utils::Dir) {
     for (file_name, file_pathbuf) in d.child_files.iter() {
-        copy_or_trans_file(file_pathbuf, &target_dir.join(file_name), &tera).unwrap();
+        copy_or_trans_file(file_pathbuf, &target_dir.join(file_name), &tera, dir_tree).unwrap();
     }
 
     for (dir_name, dir_pathbuf) in d.child_dirs.iter() {
         let ntd = target_dir.join(dir_name);
         fs::create_dir(&ntd).unwrap();
-        copy_or_trans_dir(dir_pathbuf, &ntd, tera)
+        copy_or_trans_dir(dir_pathbuf, &ntd, tera, &d)
     }
 }
 
-fn copy_or_trans_file(p: &PathBuf, q: &PathBuf, tera: &Tera) -> std::io::Result<u64> {
+fn copy_or_trans_file(
+    p: &PathBuf,
+    q: &PathBuf,
+    tera: &Tera,
+    dir_tree: &utils::Dir,
+) -> std::io::Result<u64> {
     let file_ext = p.extension();
     if file_ext != Some(std::ffi::OsStr::new("md")) {
         copy_info(p, q, false);
@@ -81,10 +85,13 @@ fn copy_or_trans_file(p: &PathBuf, q: &PathBuf, tera: &Tera) -> std::io::Result<
         copy_info(p, q, true);
         let mut p_ = p.clone();
         p_.pop();
-        let mut type_ = p_.file_name().unwrap().to_str().unwrap();
+        let mut type_ = match p_.file_name() {
+            Some(osstr) => osstr.to_str().unwrap(),
+            None => "index",
+        };
         let file_name = p.file_name().unwrap();
         let md_string = fs::read_to_string(p).unwrap();
-        let context = utils::build_pagedata(file_name.to_str().unwrap(), md_string);
+        let context = markdown::build_pagedata(file_name.to_str().unwrap(), md_string, dir_tree);
         if let Some(t) = &context.front_matter.template {
             type_ = &t
         } else if file_name == "index.md" {

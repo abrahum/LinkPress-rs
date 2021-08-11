@@ -1,4 +1,5 @@
 use crate::config;
+use crate::markdown;
 use crate::utils;
 use clap::ArgMatches;
 use rocket::fs::NamedFile;
@@ -45,7 +46,9 @@ async fn css_files(file: PathBuf) -> Option<NamedFile> {
 async fn types_page(type_: &str, name: &str) -> Template {
     let mut template_name = type_;
     let md_string = utils::get_page(&type_, name).unwrap();
-    let context = utils::build_pagedata(name, md_string);
+    let cwd = PathBuf::from(".");
+    let dir_tree = utils::build_dir(&cwd);
+    let context = markdown::build_pagedata(name, md_string, &dir_tree);
     if let Some(t) = &context.front_matter.template {
         template_name = &t;
     }
