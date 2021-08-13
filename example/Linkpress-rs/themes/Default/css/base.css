@@ -1,8 +1,9 @@
 body {
-    font-size: 22px;
-    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Microsoft YaHei New", STHeiti Light, sans-serif;
+    font-size: 18px;
+    font-family: Lato, "PingFang SC", "Microsoft YaHei New", sans-serif;
     text-rendering: optimizeLegibility;
     color: #111;
+    font-weight: 400;
 }
 
 blockquote {
@@ -35,7 +36,7 @@ h2 {
 }
 
 h3 {
-    font-size: 1.5em;
+    font-size: 1.4em;
 }
 
 h4 {
@@ -62,7 +63,8 @@ h1, h2 {
 
 li {
     line-height: 1.4;
-    margin: 0.5em 0 ;
+    margin: 0.5em 0;
+    list-style: none;
 }
 
 code {
@@ -122,6 +124,15 @@ td {
     color: #666;
 }
 
+.subtitle {
+    color: #666;
+}
+
+.noa {
+    color: #111;
+    text-decoration: none;
+}
+
 @media only screen and (max-width:1200px) {
     body {
         max-width: 80%;
@@ -133,4 +144,16 @@ td {
         margin-left: 1em;
         max-width: 100%;
     }
+}
+
+li::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 100%;
+    background-color: #04082d;
+    left: -0.6em;
+    top: -0.2em;
+    display: inline-block;
+    position: relative;
 }

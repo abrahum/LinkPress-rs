@@ -1,0 +1,10 @@
+{% extends "katex" %}
+
+{% block body %}
+{% for tag in tags_index %}
+<h1>
+    <a href="/tags/{{tag}}" class="noa"> {{tag}}</a>
+</h1>
+{% endfor %}
+{{super()}}
+{% endblock body %}

@@ -56,18 +56,43 @@ pub fn generator() {
 
     // copy all cwd files(only files dir will not) to target dir
     // 将根目录下的文件（不包括文件夹）拷贝至 target 目录
-    copy_or_trans_dir(&d, &target_dir, &tera, &d);
+    copy_or_trans_dir(&d, &target_dir, &tera, &d, &lp_config);
+
+    // tags
+    let tags_dir = target_dir.join("tags");
+    fs::create_dir(&tags_dir).unwrap();
+    let mut context = markdown::build_pagedata("index", String::new(), &lp_config);
+    let tags = utils::build_tag_vec(&d);
+    context.tags_index = tags.clone();
+    let contents = tera
+        .render("tags", &Context::from_serialize(&context).unwrap())
+        .unwrap();
+
+    fs::write(&tags_dir.join("index.html"), contents).unwrap();
 }
 
-fn copy_or_trans_dir(d: &utils::Dir, target_dir: &PathBuf, tera: &Tera, dir_tree: &utils::Dir) {
+fn copy_or_trans_dir(
+    d: &utils::Dir,
+    target_dir: &PathBuf,
+    tera: &Tera,
+    dir_tree: &utils::Dir,
+    lp_config: &config::Config,
+) {
     for (file_name, file_pathbuf) in d.child_files.iter() {
-        copy_or_trans_file(file_pathbuf, &target_dir.join(file_name), &tera, dir_tree).unwrap();
+        copy_or_trans_file(
+            file_pathbuf,
+            &target_dir.join(file_name),
+            &tera,
+            dir_tree,
+            &lp_config,
+        )
+        .unwrap();
     }
 
     for (dir_name, dir_pathbuf) in d.child_dirs.iter() {
         let ntd = target_dir.join(dir_name);
         fs::create_dir(&ntd).unwrap();
-        copy_or_trans_dir(dir_pathbuf, &ntd, tera, &d)
+        copy_or_trans_dir(dir_pathbuf, &ntd, tera, dir_tree, &lp_config)
     }
 }
 
@@ -76,6 +101,7 @@ fn copy_or_trans_file(
     q: &PathBuf,
     tera: &Tera,
     dir_tree: &utils::Dir,
+    lp_config: &config::Config,
 ) -> std::io::Result<u64> {
     let file_ext = p.extension();
     if file_ext != Some(std::ffi::OsStr::new("md")) {
@@ -85,24 +111,48 @@ fn copy_or_trans_file(
         copy_info(p, q, true);
         let mut p_ = p.clone();
         p_.pop();
+        let mut f_dir_name = ".";
+        // 从父目录名获得模板类型
         let mut type_ = match p_.file_name() {
-            Some(osstr) => osstr.to_str().unwrap(),
-            None => "index",
+            Some(osstr) => {
+                f_dir_name = osstr.to_str().unwrap();
+                f_dir_name
+            }
+            None => "index", // 根目录首页默认模板 index
         };
+        let contexts: String;
         let file_name = p.file_name().unwrap();
         let md_string = fs::read_to_string(p).unwrap();
-        let context = markdown::build_pagedata(file_name.to_str().unwrap(), md_string, dir_tree);
+        let mut context =
+            markdown::build_pagedata(file_name.to_str().unwrap(), md_string, &lp_config);
         if let Some(t) = &context.front_matter.template {
+            // 从front_matter获取模板类型
             type_ = &t
         } else if file_name == "index.md" {
+            // 子目录首页默认模板 index（后续考虑可客制）
             type_ = "index"
         }
-        let contexts = tera.render(type_, &Context::from_serialize(&context).unwrap());
+        if type_ == "index" {
+            let index_type: &str;
+            if f_dir_name == "." {
+                index_type = "posts"
+            } else {
+                index_type = f_dir_name
+            }
+            context.index = Some(dir_tree.build_index(index_type));
+            contexts = tera
+                .render(type_, &Context::from_serialize(&context).unwrap())
+                .unwrap();
+        } else {
+            contexts = tera
+                .render(type_, &Context::from_serialize(&context).unwrap())
+                .unwrap();
+        }
         let mut nq = q.clone();
         nq.pop();
         let file_stem = Path::new(file_name).file_stem().unwrap();
         nq.push(format!("{}.html", file_stem.to_str().unwrap()));
-        match fs::write(nq, contexts.unwrap()) {
+        match fs::write(nq, contexts) {
             Ok(()) => std::io::Result::Ok(1),
             Err(e) => std::io::Result::Err(e),
         }

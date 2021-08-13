@@ -1,4 +1,5 @@
 use crate::logger::copy_info;
+use crate::markdown;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
@@ -89,5 +90,80 @@ pub fn cp_all_dir(p: &PathBuf, to: &PathBuf) {
                 cp_all_dir(&ep, &next_to);
             }
         }
+    }
+}
+
+impl Dir {
+    pub fn build_index(&self, head_type: &str) -> HashMap<String, markdown::IndexItem> {
+        let mut rhash: HashMap<String, markdown::IndexItem> = HashMap::new();
+        let dir = match self.child_dirs.get(head_type) {
+            Some(d) => d,
+            None => panic!("index type not found."),
+        };
+        for (title, path) in &dir.child_files {
+            let url = path.to_str().unwrap();
+            let url = String::from(url.replace(".md", "").replace(".", ""));
+            let md = fs::read_to_string(path).unwrap();
+            let mpr = markdown::front_matter_parser(md.clone(), title.clone(), String::from(""));
+            rhash.insert(
+                mpr.front_matter.title.clone(),
+                markdown::IndexItem {
+                    url: url,
+                    abst: markdown::build_abst(&md),
+                    front_matter: mpr.front_matter.clone(),
+                },
+            );
+        }
+        rhash
+    }
+
+    pub fn build_tags_index(&self) -> HashMap<String, HashMap<String, markdown::IndexItem>> {
+        let mut rhash = HashMap::new();
+        for (dir_name, _) in &self.child_dirs {
+            let index = self.build_index(dir_name);
+            for (page_name, index_item) in index {
+                if let Some(tags) = &index_item.front_matter.tags {
+                    for tag in tags {
+                        inset_to_hashmap(
+                            &mut rhash,
+                            &tag,
+                            page_name.to_string(),
+                            index_item.clone(),
+                        );
+                    }
+                }
+            }
+        }
+        rhash
+    }
+}
+
+fn inset_to_hashmap(
+    hash: &mut HashMap<String, HashMap<String, markdown::IndexItem>>,
+    tag: &str,
+    page_name: String,
+    index_item: markdown::IndexItem,
+) {
+    match hash.get_mut(tag) {
+        Some(h) => {
+            h.insert(page_name, index_item);
+        }
+        None => {
+            let mut nh = HashMap::new();
+            nh.insert(page_name, index_item);
+            hash.insert(tag.to_string(), nh);
+        }
+    }
+}
+
+pub fn build_tag_vec(d: &Dir) -> Option<Vec<String>> {
+    let mut tags = vec![];
+    for tag in d.build_tags_index().keys() {
+        tags.push(tag.clone());
+    }
+    if tags.is_empty() {
+        None
+    } else {
+        Some(tags)
     }
 }

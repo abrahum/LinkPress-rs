@@ -11,8 +11,14 @@ use std::str::FromStr;
 
 // root routes
 #[get("/")]
-async fn index() -> &'static str {
-    "Hello,Rocket."
+async fn index() -> Template {
+    let lp_config = config::load_config();
+    let md_string = String::new();
+    let cwd = PathBuf::from(".");
+    let dir_tree = utils::build_dir(&cwd);
+    let mut context = markdown::build_pagedata("index", md_string, &lp_config);
+    context.index = Some(dir_tree.build_index("posts"));
+    Template::render("index", context)
 }
 
 #[get("/favicon.ico")]
@@ -41,14 +47,37 @@ async fn css_files(file: PathBuf) -> Option<NamedFile> {
     NamedFile::open(css_dir.join(file)).await.ok()
 }
 
+// tags routes
+#[get("/")]
+async fn tags_index() -> Template {
+    let lp_config = config::load_config();
+    let md_string = String::new();
+    let cwd = PathBuf::from(".");
+    let dir_tree = utils::build_dir(&cwd);
+    let mut context = markdown::build_pagedata("index", md_string, &lp_config);
+    let tags = utils::build_tag_vec(&dir_tree);
+    context.tags_index = tags;
+    Template::render(String::from("tags"), context)
+}
+
+#[get("/<tag_name>")]
+async fn tags_pages(tag_name: &str) -> Template {
+    let lp_config = config::load_config();
+    let md_string = String::new();
+    let cwd = PathBuf::from(".");
+    let dir_tree = utils::build_dir(&cwd);
+    let mut context = markdown::build_pagedata("index", md_string, &lp_config);
+    context.index = Some(dir_tree.build_tags_index().get(tag_name).unwrap().clone());
+    Template::render(String::from("index"), context)
+}
+
 // types routes
 #[get("/<type_>/<name>", rank = 2)]
 async fn types_page(type_: &str, name: &str) -> Template {
     let mut template_name = type_;
+    let lp_config = config::load_config();
     let md_string = utils::get_page(&type_, name).unwrap();
-    let cwd = PathBuf::from(".");
-    let dir_tree = utils::build_dir(&cwd);
-    let context = markdown::build_pagedata(name, md_string, &dir_tree);
+    let context = markdown::build_pagedata(name, md_string, &lp_config);
     if let Some(t) = &context.front_matter.template {
         template_name = &t;
     }
@@ -68,6 +97,7 @@ async fn tokio_run(template_dir: &str, host: net::IpAddr, port: u16) {
             "/",
             routes![index, types_page, favicon, js_files, css_files],
         )
+        .mount("/tags", routes![tags_index, tags_pages])
         .mount("/static", routes![static_files])
         .launch()
         .await

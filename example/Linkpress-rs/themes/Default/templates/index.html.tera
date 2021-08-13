@@ -1,5 +1,19 @@
 {% extends "katex" %}
 
 {% block body %}
-
+{% for title, i in index %}
+<h1>
+    <a href="{{i.url}}" class="noa"> {{title}}</a>
+</h1>
+{{ i.abst | safe }}
+<span class="sub time">{{i.front_matter.date}}</span>
+{% for tag in i.front_matter.tags %}
+<span class="sub tags">
+    <a href="/tags/{{tag}}">
+        #{{tag}}
+    </a>
+</span>
+{% endfor %}
+{% endfor %}
+{{super()}}
 {% endblock body %}

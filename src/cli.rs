@@ -1,17 +1,14 @@
 use crate::config;
-use crate::generator as gen ;
+use crate::generator as gen;
+use crate::markdown;
 use chrono::Local;
+use serde_yaml;
 use std::env::current_dir;
 use std::fs;
 use std::path::PathBuf;
 
 const DEFAULE_DIR_NAME: &str = "Linkpress-rs";
 const DEFAULT_TYPE: &str = "post";
-const DEFAULT_INDEX: &str = r"---
-title: index
-date: 2021-08-05
-template: index
----";
 
 pub fn init(dir_name_input: Option<&str>) {
     let dir_name: &str;
@@ -26,11 +23,15 @@ pub fn init(dir_name_input: Option<&str>) {
         std::process::exit(101);
     } else {
         fs::create_dir(dir_name).unwrap();
-        config::create_config().save(Some(dir_name));
+        config::new().save(Some(dir_name));
         let path = PathBuf::from(dir_name);
         fs::create_dir(path.join("themes")).unwrap();
         fs::create_dir(path.join("posts")).unwrap();
-        fs::write(path.join("index.md"), DEFAULT_INDEX).unwrap();
+        fs::write(
+            path.join("index.md"),
+            generate_front_matter("index", Some("index")),
+        )
+        .unwrap();
     }
 }
 
@@ -89,4 +90,24 @@ fn had(name: &str) -> bool {
         }
     }
     had
+}
+
+fn generate_front_matter(title: &str, template: Option<&str>) -> String {
+    let today = Local::now();
+    let today = today.format("%Y-%m-%d");
+    let front_matter = markdown::FrontMatter {
+        title: title.to_string(),
+        date: today.to_string(),
+        template: match template {
+            Some(s) => Some(s.to_string()),
+            None => None,
+        },
+        tags: None,
+        custom: None,
+    };
+    let yaml = match serde_yaml::to_string(&front_matter) {
+        Ok(r) => format!("---\n{}\n---", r),
+        Err(e) => panic!("{}", e),
+    };
+    yaml
 }

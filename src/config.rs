@@ -9,30 +9,34 @@ use toml;
 
 pub const CONFIG_PATH: &str = "LinkPress.toml";
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
     pub site: SiteConfig,
     pub serve: ServeConfig,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SiteConfig {
     site_name: String,
+    subtitle: String,
+    author: String,
     since: i32,
     pub theme: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ServeConfig {
     pub host: net::IpAddr,
     pub port: u16,
 }
 
-pub fn create_config() -> Config {
+pub fn new() -> Config {
     let now = Local::now();
     let new_config = Config {
         site: SiteConfig {
-            site_name: String::from("A linkpress-rs website"),
+            site_name: String::from("LinkPress"),
+            subtitle: String::from("Just a linkpress-rs website"),
+            author: String::from("Unkown"),
             since: now.year(),
             theme: String::from("Default"),
         },
@@ -47,7 +51,7 @@ pub fn create_config() -> Config {
 pub fn load_config() -> Config {
     let config: Config;
     if !PathBuf::from(CONFIG_PATH).exists() {
-        config = create_config().save(None);
+        config = new().save(None);
     } else {
         let config_toml = fs::read_to_string(PathBuf::from(CONFIG_PATH)).unwrap();
         config = toml::from_str(&config_toml).unwrap();
@@ -63,7 +67,6 @@ impl Config {
             Some(dn) => dir_name = PathBuf::from(dn).join(CONFIG_PATH),
             None => dir_name = PathBuf::from(CONFIG_PATH),
         }
-        println!("{:?}", dir_name);
         fs::write(PathBuf::from(dir_name), config_toml).expect("LinkPress.toml保存错误");
         self
     }
