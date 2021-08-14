@@ -4,7 +4,9 @@ A static site generator by rust.
 
 ## To-Do
 
-- [ ] Serve the minimum instance
-- [ ] Generate the web page
+- [x] Serve the minimum instance
+- [x] Generate the web page
 - [ ] More customized options
-- [ ] Minimun example with default theme
+- [x] Minimun example with default theme
+
+> 学习之作

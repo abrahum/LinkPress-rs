@@ -8,6 +8,15 @@ use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 
 pub fn generator() {
+    match utils::is_project_dir() {
+        Ok(_) => {
+            generate();
+        }
+        Err(s) => println!("{}", s),
+    }
+}
+
+fn generate() {
     // load LinkPress config and cwd and more variables
     // 载入 LinkPress 的配置项，获得 cwd 和其他必要变量
     let cwd = PathBuf::from(".");
@@ -18,9 +27,10 @@ pub fn generator() {
     // 初始化 target 文件夹，清空现有文件
     let target_dir = cwd.join("target");
     if target_dir.exists() {
-        fs::remove_dir_all(&target_dir).unwrap();
+        clear_target_dir(&target_dir)
+    } else {
+        fs::create_dir(&target_dir).unwrap();
     }
-    fs::create_dir(&target_dir).unwrap();
 
     // theme dir and config
     // 当前主题文件夹和主题配置
@@ -60,6 +70,7 @@ pub fn generator() {
 
     // tags
     let tags_dir = target_dir.join("tags");
+    copy_info(&PathBuf::from("tags"), &tags_dir, "BUILD");
     fs::create_dir(&tags_dir).unwrap();
     let mut context = markdown::build_pagedata("index", String::new(), &lp_config);
     let tags = utils::build_tag_vec(&d);
@@ -67,8 +78,16 @@ pub fn generator() {
     let contents = tera
         .render("tags", &Context::from_serialize(&context).unwrap())
         .unwrap();
-
     fs::write(&tags_dir.join("index.html"), contents).unwrap();
+
+    let tags_index = d.build_tags_index();
+    for tag in tags.unwrap() {
+        context.index = Some(tags_index.get(&tag).unwrap().clone());
+        let contents = tera
+            .render("index", &Context::from_serialize(&context).unwrap())
+            .unwrap();
+        fs::write(&tags_dir.join(format!("{}.html", &tag)), contents).unwrap();
+    }
 }
 
 fn copy_or_trans_dir(
@@ -105,10 +124,10 @@ fn copy_or_trans_file(
 ) -> std::io::Result<u64> {
     let file_ext = p.extension();
     if file_ext != Some(std::ffi::OsStr::new("md")) {
-        copy_info(p, q, false);
+        copy_info(p, q, "COPY ");
         fs::copy(p, q)
     } else {
-        copy_info(p, q, true);
+        copy_info(p, q, "TRANS");
         let mut p_ = p.clone();
         p_.pop();
         let mut f_dir_name = ".";
@@ -155,6 +174,21 @@ fn copy_or_trans_file(
         match fs::write(nq, contexts) {
             Ok(()) => std::io::Result::Ok(1),
             Err(e) => std::io::Result::Err(e),
+        }
+    }
+}
+
+fn clear_target_dir(target_dir: &PathBuf) {
+    for i in target_dir.read_dir().unwrap() {
+        if let Ok(entry) = i {
+            let ep = entry.path();
+            if ep.is_file() {
+                fs::remove_file(ep).unwrap();
+            } else if ep.is_dir() {
+                if ep.file_name().unwrap() != ".git" {
+                    fs::remove_dir_all(ep).unwrap()
+                }
+            }
         }
     }
 }

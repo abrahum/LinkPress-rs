@@ -14,6 +14,14 @@ pub fn get_type_path(type_: &str) -> Result<PathBuf, &'static str> {
     }
 }
 
+pub fn is_project_dir() -> Result<bool, &'static str> {
+    if PathBuf::from(crate::config::CONFIG_PATH).exists() {
+        Ok(true)
+    } else {
+        Err("请在Linkpress项目文件夹内使用指令。")
+    }
+}
+
 pub fn get_page(type_: &str, name: &str) -> Result<String, &'static str> {
     match get_type_path(type_) {
         Ok(path) => {
@@ -78,7 +86,7 @@ pub fn build_dir(p: &PathBuf) -> Dir {
 }
 
 pub fn cp_all_dir(p: &PathBuf, to: &PathBuf) {
-    copy_info(p, to, false);
+    copy_info(p, to, "COPY ");
     for i in p.read_dir().unwrap() {
         if let Ok(entry) = i {
             let ep = entry.path();
@@ -94,42 +102,41 @@ pub fn cp_all_dir(p: &PathBuf, to: &PathBuf) {
 }
 
 impl Dir {
-    pub fn build_index(&self, head_type: &str) -> HashMap<String, markdown::IndexItem> {
-        let mut rhash: HashMap<String, markdown::IndexItem> = HashMap::new();
+    pub fn build_index(&self, head_type: &str) -> Vec<markdown::IndexItem> {
+        let mut rvec = vec![];
         let dir = match self.child_dirs.get(head_type) {
             Some(d) => d,
             None => panic!("index type not found."),
         };
         for (title, path) in &dir.child_files {
+            if title == "index.md" {
+                continue;
+            }
             let url = path.to_str().unwrap();
             let url = String::from(url.replace(".md", "").replace(".", ""));
             let md = fs::read_to_string(path).unwrap();
             let mpr = markdown::front_matter_parser(md.clone(), title.clone(), String::from(""));
-            rhash.insert(
-                mpr.front_matter.title.clone(),
+            push_sort_date(
+                &mut rvec,
                 markdown::IndexItem {
+                    title: mpr.front_matter.title.clone(),
                     url: url,
                     abst: markdown::build_abst(&md),
                     front_matter: mpr.front_matter.clone(),
                 },
             );
         }
-        rhash
+        rvec
     }
 
-    pub fn build_tags_index(&self) -> HashMap<String, HashMap<String, markdown::IndexItem>> {
+    pub fn build_tags_index(&self) -> HashMap<String, Vec<markdown::IndexItem>> {
         let mut rhash = HashMap::new();
         for (dir_name, _) in &self.child_dirs {
             let index = self.build_index(dir_name);
-            for (page_name, index_item) in index {
+            for index_item in index {
                 if let Some(tags) = &index_item.front_matter.tags {
                     for tag in tags {
-                        inset_to_hashmap(
-                            &mut rhash,
-                            &tag,
-                            page_name.to_string(),
-                            index_item.clone(),
-                        );
+                        inset_to_hashmap(&mut rhash, &tag, index_item.clone());
                     }
                 }
             }
@@ -139,21 +146,32 @@ impl Dir {
 }
 
 fn inset_to_hashmap(
-    hash: &mut HashMap<String, HashMap<String, markdown::IndexItem>>,
+    hash: &mut HashMap<String, Vec<markdown::IndexItem>>,
     tag: &str,
-    page_name: String,
     index_item: markdown::IndexItem,
 ) {
     match hash.get_mut(tag) {
         Some(h) => {
-            h.insert(page_name, index_item);
+            push_sort_date(h, index_item);
         }
         None => {
-            let mut nh = HashMap::new();
-            nh.insert(page_name, index_item);
+            let mut nh = vec![];
+            push_sort_date(&mut nh, index_item);
             hash.insert(tag.to_string(), nh);
         }
     }
+}
+
+fn push_sort_date(rvec: &mut Vec<markdown::IndexItem>, item: markdown::IndexItem) {
+    let mut t = 0;
+    for i in rvec.clone() {
+        if &i.front_matter.date <= &item.front_matter.date {
+            rvec.insert(t, item.clone());
+            return;
+        }
+        t += 1;
+    }
+    rvec.push(item);
 }
 
 pub fn build_tag_vec(d: &Dir) -> Option<Vec<String>> {

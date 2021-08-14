@@ -72,6 +72,17 @@ async fn tags_pages(tag_name: &str) -> Template {
 }
 
 // types routes
+#[get("/<type_>", rank = 2)]
+async fn types_index(type_: &str) -> Template {
+    let lp_config = config::load_config();
+    let md_string = String::new();
+    let cwd = PathBuf::from(".");
+    let dir_tree = utils::build_dir(&cwd);
+    let mut context = markdown::build_pagedata("index", md_string, &lp_config);
+    context.index = Some(dir_tree.build_index(type_));
+    Template::render("index", context)
+}
+
 #[get("/<type_>/<name>", rank = 2)]
 async fn types_page(type_: &str, name: &str) -> Template {
     let mut template_name = type_;
@@ -95,7 +106,7 @@ async fn tokio_run(template_dir: &str, host: net::IpAddr, port: u16) {
         .attach(Template::fairing())
         .mount(
             "/",
-            routes![index, types_page, favicon, js_files, css_files],
+            routes![index, types_index, types_page, favicon, js_files, css_files],
         )
         .mount("/tags", routes![tags_index, tags_pages])
         .mount("/static", routes![static_files])

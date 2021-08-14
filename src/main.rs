@@ -1,5 +1,6 @@
 mod cli;
 mod config;
+mod deployer;
 mod generator;
 mod logger;
 mod markdown;
@@ -23,6 +24,7 @@ fn main() {
                     .short("n")
                     .long("name")
                     .required(false)
+                    .takes_value(true)
                     .help("The Linkpress dir name"),
             ),
         )
@@ -72,6 +74,11 @@ fn main() {
             SubCommand::with_name("generate")
                 .about("Generate static file.")
                 .alias("g"),
+        )
+        .subcommand(
+            SubCommand::with_name("deploy")
+                .about("Deploy your website wit git (to-do)")
+                .alias("d"),
         );
     let mut help_app = linkpress_app.clone();
     let matches = linkpress_app.get_matches();
@@ -84,7 +91,9 @@ fn main() {
     } else if let Some(n) = matches.subcommand_matches("new") {
         cli::new(n.value_of("type"), n.value_of("name").unwrap());
     } else if let Some(_) = matches.subcommand_matches("generate") {
-        cli::generator();
+        generator::generator();
+    } else if let Some(_) = matches.subcommand_matches("deploy") {
+        deployer::deployer();
     } else {
         help_app.print_help().unwrap();
     }

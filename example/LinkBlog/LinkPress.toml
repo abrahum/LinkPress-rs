@@ -1,0 +1,10 @@
+[site]
+site_name = "LinkPress"
+subtitle = "Just a linkpress-rs website"
+author = "Unkown"
+since = 2021
+theme = "Default"
+
+[serve]
+host = "127.0.0.1"
+port = 4040

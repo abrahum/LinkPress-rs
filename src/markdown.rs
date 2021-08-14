@@ -9,13 +9,14 @@ use std::collections::HashMap;
 pub struct MarkdownParserResult {
     pub front_matter: FrontMatter,
     pub body: String,
-    pub index: Option<HashMap<String, IndexItem>>,
+    pub index: Option<Vec<IndexItem>>,
     pub tags_index: Option<Vec<String>>,
     pub lp_config: config::Config,
 }
 
 #[derive(Debug, Serialize, Clone)]
 pub struct IndexItem {
+    pub title: String,
     pub url: String,
     pub abst: Option<String>,
     pub front_matter: FrontMatter,
@@ -57,7 +58,7 @@ pub fn markdown(md: String, title: String, date: String) -> MarkdownParserResult
 }
 
 pub fn front_matter_parser(md: String, title: String, date: String) -> MarkdownParserResult {
-    let re = Regex::new(r"(?x)---\n(?P<front_matter>[^(---)]+)---\n").unwrap();
+    let re = Regex::new(r"(?x)---(?P<front_matter>[^\|]+)---").unwrap();
     let mut rmpr: MarkdownParserResult = MarkdownParserResult {
         front_matter: FrontMatter {
             title: title,

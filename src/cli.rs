@@ -1,5 +1,4 @@
 use crate::config;
-use crate::generator as gen;
 use crate::markdown;
 use chrono::Local;
 use serde_yaml;
@@ -36,7 +35,7 @@ pub fn init(dir_name_input: Option<&str>) {
 }
 
 pub fn new(type_: Option<&str>, name: &str) {
-    match is_project_dir() {
+    match crate::utils::is_project_dir() {
         Ok(_) => _new(type_, name),
         Err(s) => println!("{}", s),
     }
@@ -58,23 +57,6 @@ fn _new(type_: Option<&str>, name: &str) {
     let today = today.format("%Y-%m-%d");
     let file_path = PathBuf::from(&dir_name).join(format!("{}-{}.md", today, name));
     fs::write(file_path, "").unwrap();
-}
-
-pub fn generator() {
-    match is_project_dir() {
-        Ok(_) => {
-            gen::generator();
-        }
-        Err(s) => println!("{}", s),
-    }
-}
-
-fn is_project_dir() -> Result<bool, &'static str> {
-    if PathBuf::from(config::CONFIG_PATH).exists() {
-        Ok(true)
-    } else {
-        Err("请在Linkpress项目文件夹内使用指令。")
-    }
 }
 
 fn had(name: &str) -> bool {
@@ -106,7 +88,7 @@ fn generate_front_matter(title: &str, template: Option<&str>) -> String {
         custom: None,
     };
     let yaml = match serde_yaml::to_string(&front_matter) {
-        Ok(r) => format!("---\n{}\n---", r),
+        Ok(r) => format!("{}---", r),
         Err(e) => panic!("{}", e),
     };
     yaml
