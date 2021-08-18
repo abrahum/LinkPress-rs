@@ -2,7 +2,6 @@ use crate::config;
 use crate::logger::copy_info;
 use crate::markdown;
 use crate::utils;
-use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
@@ -38,27 +37,7 @@ fn generate() {
 
     // init tera and load templates
     // 初始化 tera 并载入模板（ hbs todo ）
-    let mut tera = Tera::default();
-    // build a HashMap to save templates information
-    // 建立一个 HashMap 暂存模板信息
-    let mut files_map: HashMap<String, PathBuf> = HashMap::new();
-    let re = regex::Regex::new(r"(?x)(?P<name>\w+)\.html\.tera").unwrap();
-    for i in theme_dir.join("templates").read_dir().unwrap() {
-        if let Ok(entry) = i {
-            let file_name_ = entry.file_name();
-            let file_name = file_name_.to_str().unwrap();
-            let file_path = entry.path();
-            let cap = re.captures(file_name).unwrap();
-            files_map.insert(String::from(&cap["name"]), file_path);
-        }
-    }
-    // trans HashMap to Vec to suit add function
-    // 将暂存的模板信息转化为引用 Vec 传入 tera
-    let mut files: Vec<(&Path, Option<&str>)> = vec![];
-    for (k, v) in files_map.iter() {
-        files.push((Path::new(v), Some(&k)))
-    }
-    tera.add_template_files(files).unwrap();
+    let tera = utils::get_tera(&theme_dir);
 
     // copy all theme files(except templates dir) to target dir
     // 将主题文件夹下除了 templates 的其他文件（夹）拷贝到 target 目录

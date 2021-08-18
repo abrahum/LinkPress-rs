@@ -1,19 +1,93 @@
 {% extends "katex" %}
 
+{% block head %}
+{{super()}}
+<link rel="stylesheet" href="/css/index.css">
+<title>{{lp_config.site.site_name}}</title>
+{% endblock head %}
+
 {% block body %}
 {% for i in index %}
-<h1>
-    <a href="{{i.url}}" class="noa"> {{i.title}}</a>
-</h1>
-{{ i.abst | safe }}
-<span class="sub time">{{i.front_matter.date}}</span>
-{% for tag in i.front_matter.tags %}
-<span class="sub tags">
-    <a href="/tags/{{tag}}">
-        #{{tag}}
-    </a>
-</span>
+<div id="index-{{ loop.index0 }}" class="indexs">
+    <h1>
+        <a href="{{i.url}}" class="noa"> {{i.title}}</a>
+    </h1>
+    {{ i.abst | safe }}
+    <span class="sub time">{{i.front_matter.date}}</span>
+    {% for tag in i.front_matter.tags %}
+    <span class="sub tags">
+        <a href="/tags/{{tag}}">
+            #{{tag}}
+        </a>
+    </span>
+    {% endfor %}
+</div>
 {% endfor %}
-{% endfor %}
+<div id="pages"></div>
 {{super()}}
+<style>
+    .indexs {
+        display: none;
+    }
+</style>
+<script>
+    let perpage = 5; // pages show per index page
+    let curpage = 0; // curent index page
+    let indexs = document.getElementsByClassName("indexs");
+    show(indexs, 0);
+
+    let page_count = Math.ceil(indexs.length / perpage);
+    if (page_count > 1) {
+        add_pages(0);
+    } else {
+        document.getElementById("pages").style.display = "none";
+    }
+
+    function show(elements, start) {
+        let end = Math.min(elements.length, start + perpage);
+        for (let i = start; i < end; i++) {
+            elements[i].style.display = "block";
+        }
+    }
+
+    function hideall(elements) {
+        for (let i = 0; i < elements.length; i++) {
+            elements[i].style.display = "none";
+        }
+    }
+
+    function add_pages(page) {
+        let parent = document.getElementById("pages");
+        parent.innerHTML = "";
+        if (page != 0) {
+            parent.appendChild(_add_page(page - 1, false));
+        }
+        if (page != page_count - 1) {
+            parent.appendChild(_add_page(page + 1, true));
+        }
+    }
+
+    function _add_page(page, next) {
+        let nc = document.createElement("span");
+        let text = "";
+        if (next) {
+            text = ">";
+        } else {
+            text = "<";
+        }
+        let content = document.createTextNode(text);
+        nc.appendChild(content);
+        nc.setAttribute("id", "page-" + page);
+        nc.setAttribute("class", "pages-item");
+        nc.setAttribute("onclick", "to_page(" + page + ")");
+        return nc
+    }
+
+    function to_page(page) {
+        hideall(indexs);
+        show(indexs, page * perpage);
+        curpage = page;
+        add_pages(curpage);
+    }
+</script>
 {% endblock body %}

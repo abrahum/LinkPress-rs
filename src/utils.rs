@@ -185,3 +185,32 @@ pub fn build_tag_vec(d: &Dir) -> Option<Vec<String>> {
         Some(tags)
     }
 }
+
+use tera::Tera;
+
+pub fn get_tera(theme_dir: &PathBuf) -> Tera {
+    // init tera and load templates
+    // 初始化 tera 并载入模板（ hbs todo ）
+    let mut tera = Tera::default();
+    // build a HashMap to save templates information
+    // 建立一个 HashMap 暂存模板信息
+    let mut files_map: HashMap<String, PathBuf> = HashMap::new();
+    let re = regex::Regex::new(r"(?x)(?P<name>\w+)\.html\.tera").unwrap();
+    for i in theme_dir.join("templates").read_dir().unwrap() {
+        if let Ok(entry) = i {
+            let file_name_ = entry.file_name();
+            let file_name = file_name_.to_str().unwrap();
+            let file_path = entry.path();
+            let cap = re.captures(file_name).unwrap();
+            files_map.insert(String::from(&cap["name"]), file_path);
+        }
+    }
+    // trans HashMap to Vec to suit add function
+    // 将暂存的模板信息转化为引用 Vec 传入 tera
+    let mut files: Vec<(&std::path::Path, Option<&str>)> = vec![];
+    for (k, v) in files_map.iter() {
+        files.push((std::path::Path::new(v), Some(&k)))
+    }
+    tera.add_template_files(files).unwrap();
+    tera
+}

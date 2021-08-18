@@ -1,14 +1,15 @@
 body {
-    font-size: 18px;
-    font-family: 'Lato', "PingFang SC", "Microsoft YaHei New", sans-serif;
+    font-size: 22px;
+    font-family: 'Lato', "Nato Sans Sc", "PingFang SC", "Microsoft YaHei New", sans-serif;
     text-rendering: optimizeLegibility;
     color: #222;
     font-weight: 400;
 }
 
 h1, h2, h3, h4, h5 {
-    font-family: 'Kanit', "PingFang SC", "Microsoft YaHei New", sans-serif;
+    font-family: 'Kanit', "Nato Sans Sc", "PingFang SC", "Microsoft YaHei New", sans-serif;
     color: black;
+    margin: 2rem 0;
 }
 
 blockquote {
@@ -68,16 +69,15 @@ footer::before, h1:not(.site-title)::before, h2::before {
 footer {
     font-size: 0.8em;
     color: #666;
-    margin-top: 1.8rem;
+    margin-top: 3rem;
 }
 
 h1, h2 {
-    margin-top: 1em;
-    margin-bottom: 1.5em;
+    margin: 3rem 0;
 }
 
 li {
-    line-height: 1.4;
+    line-height: 1.6;
     margin: 0.5em 0;
     list-style: none;
 }
@@ -154,6 +154,7 @@ td {
     body {
         margin-left: 1em;
         max-width: 100%;
+        font-size: 18px;
     }
 }
 

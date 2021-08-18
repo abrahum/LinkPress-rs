@@ -1,7 +1,7 @@
 {% extends "base" %}
 {% block head %}
 <title>
-    {{front_matter.title}}
+    {{front_matter.title}} | {{lp_config.site.site_name}}
 </title>
 {{super()}}
 {% endblock head %}}

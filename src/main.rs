@@ -1,16 +1,13 @@
+mod axumapp;
 mod cli;
 mod config;
 mod deployer;
 mod generator;
 mod logger;
 mod markdown;
-mod rcapp;
 mod utils;
 
 use clap::{App, Arg, SubCommand};
-
-#[macro_use]
-extern crate rocket;
 
 fn main() {
     simple_logger::init_with_level(log::Level::Info).unwrap();
@@ -87,7 +84,7 @@ fn main() {
         let name = i.value_of("name");
         cli::init(name);
     } else if let Some(s) = matches.subcommand_matches("serve") {
-        rcapp::serve(s);
+        axumapp::tokio_run(s);
     } else if let Some(n) = matches.subcommand_matches("new") {
         cli::new(n.value_of("type"), n.value_of("name").unwrap());
     } else if let Some(_) = matches.subcommand_matches("generate") {

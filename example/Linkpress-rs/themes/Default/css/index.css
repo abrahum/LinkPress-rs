@@ -1,0 +1,14 @@
+.pages-item {
+    cursor: pointer;
+}
+
+#pages {
+    margin: 2rem 0;
+}
+
+#pages span {
+    margin-right: 2rem;
+    color: #666;
+    font-size: 1.6em;
+    font-weight: 600;
+}

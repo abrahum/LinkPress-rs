@@ -5,7 +5,7 @@
     {% block head %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0,  user-scalable=no">
-    <link href="https://fonts.font.im/css?family=Lato|Kanit|Open+Sans" rel="stylesheet">
+    <link href="https://fonts.font.im/css?family=Lato|Kanit|Open+Sans|Noto+Sans+SC" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.css"
         integrity="sha384-RZU/ijkSsFbcmivfdRBQDtwuwVqK7GMOw6IMvKyeWL2K5UAlyp6WonmB8m7Jd0Hn" crossorigin="anonymous">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/katex.min.js"

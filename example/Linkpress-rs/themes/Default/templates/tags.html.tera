@@ -1,4 +1,10 @@
 {% extends "katex" %}
+{% block head %}
+<title>
+    Tags | {{lp_config.site.site_name}}
+</title>
+{{super()}}
+{% endblock head %}}
 
 {% block body %}
 {% for tag in tags_index %}
